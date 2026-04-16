@@ -2,6 +2,8 @@
 @attribute [Authorize(Policy = SecuraPolicies.CanViewReports)]
 @rendermode InteractiveServer
 @inject IMediator Mediator
+@using SECURA.Application.Agencies.DTOs
+@using SECURA.Application.Agencies.Queries
 @using SECURA.Application.Reports.DTOs
 @using SECURA.Application.Reports.Queries
 @using MediatR
@@ -13,10 +15,20 @@
 <MudPaper Class="pa-4 mb-4">
     <MudGrid Class="align-center">
         <MudItem xs="12" md="8">
-            <MudTextField @bind-Value="_agencyIdText" Label="Agency ID (GUID)" FullWidth="false" />
+            <MudAutocomplete T="AgencySummaryDto"
+                             Label="Select Agency"
+                             @bind-Value="_selectedAgency"
+                             SearchFunc="SearchAgencies"
+                             ToStringFunc="@(a => a?.Name ?? string.Empty)"
+                             ResetValueOnEmptyText="true"
+                             AdornmentIcon="@Icons.Material.Filled.Search"
+                             Adornment="Adornment.End"
+                             MinCharacters="0"
+                             Clearable="true" />
         </MudItem>
         <MudItem xs="12" md="4" Class="d-flex align-end">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadReport">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       OnClick="LoadReport" Disabled="@(_selectedAgency is null)">
                 Generate Scorecard
             </MudButton>
         </MudItem>
@@ -90,17 +102,33 @@ else if (_scorecard != null)
 }
 
 @code {
+    private AgencySummaryDto? _selectedAgency;
     private AgencyScorecardDto? _scorecard;
     private bool _loading;
-    private string? _agencyIdText;
+    private List<AgencySummaryDto> _agencies = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Mediator.Send(new GetAgenciesQuery(1, 200));
+        _agencies = result.Items.OrderBy(a => a.Name).ToList();
+    }
+
+    private Task<IEnumerable<AgencySummaryDto>> SearchAgencies(string value, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Task.FromResult<IEnumerable<AgencySummaryDto>>(_agencies);
+
+        var matches = _agencies
+            .Where(a => a.Name.Contains(value, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(matches);
+    }
 
     private async Task LoadReport()
     {
-        if (!Guid.TryParse(_agencyIdText, out var agencyId))
-            return;
+        if (_selectedAgency is null) return;
 
         _loading = true;
-        try { _scorecard = await Mediator.Send(new GetAgencyScorecardQuery(agencyId)); }
+        try { _scorecard = await Mediator.Send(new GetAgencyScorecardQuery(_selectedAgency.Id)); }
         finally { _loading = false; }
     }
 }

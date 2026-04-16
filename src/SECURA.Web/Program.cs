@@ -8,6 +8,7 @@ using OpenTelemetry.Metrics;
 using Serilog;
 using SECURA.Application;
 using SECURA.Infrastructure;
+using SECURA.Infrastructure.Persistence;
 using SECURA.Web.Auth;
 using SECURA.Web.Middleware;
 using SECURA.Web.Components;
@@ -121,6 +122,14 @@ try
 
     // ── Health endpoint ────────────────────────────────────────────────────
     app.MapHealthChecks("/health");
+
+    // ── Dev data seed ─────────────────────────────────────────────────────
+    if (app.Environment.IsDevelopment())
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SecuraDbContext>();
+        await DevDataSeeder.SeedAsync(db);
+    }
 
     // ── REST API controllers ───────────────────────────────────────────────
     app.MapControllers();
