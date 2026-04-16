@@ -1,0 +1,39 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+*.swp
+*.orig
+
+## EF Core
+Migrations/*.Designer.cs
+
+## NuGet
+*.nupkg
+.nuget/
+packages/
+!**/packages/repositories.config
+
+## Build outputs
+artifacts/
+publish/
+TestResults/
+coverage/
+
+## Secrets / config
+appsettings.*.local.json
+secrets.json
+.env
+*.env
+
+## OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## Logs
+*.log
+logs/

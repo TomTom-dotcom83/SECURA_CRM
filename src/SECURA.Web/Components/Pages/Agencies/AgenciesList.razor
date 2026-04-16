@@ -1,0 +1,143 @@
+@page "/agencies"
+@attribute [Authorize(Policy = SecuraPolicies.ReadOnly)]
+@rendermode InteractiveServer
+@inject IMediator Mediator
+@inject NavigationManager Nav
+
+<PageTitle>Agencies — SECURA CRM</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Agencies</MudText>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudGrid>
+        <MudItem xs="12" md="3">
+            <MudSelect T="AgencyStatus?" Label="Status" @bind-Value="_filterStatus" Clearable="true">
+                @foreach (var s in Enum.GetValues<AgencyStatus>())
+                {
+                    <MudSelectItem Value="(AgencyStatus?)s">@s</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudSelect T="AgencyTier?" Label="Tier" @bind-Value="_filterTier" Clearable="true">
+                @foreach (var t in Enum.GetValues<AgencyTier>())
+                {
+                    <MudSelectItem Value="(AgencyTier?)t">@t</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudTextField @bind-Value="_filterState" Label="State" MaxLength="2" />
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudTextField @bind-Value="_searchTerm" Label="Search" Adornment="Adornment.End"
+                          AdornmentIcon="@Icons.Material.Filled.Search" />
+        </MudItem>
+        <MudItem xs="12" Class="d-flex gap-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadData">
+                Search
+            </MudButton>
+            <MudButton Variant="Variant.Text" OnClick="ClearFilters">Clear</MudButton>
+            <MudSpacer />
+            <AuthorizeView Policy="@SecuraPolicies.CanManageAgencies">
+                <MudButton Variant="Variant.Filled" Color="Color.Success"
+                           Href="/agencies/new" StartIcon="@Icons.Material.Filled.Add">
+                    New Agency
+                </MudButton>
+            </AuthorizeView>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_result != null)
+{
+    <MudDataGrid T="AgencySummaryDto" Items="_result.Items" Filterable="false"
+                 SortMode="SortMode.Single" Hover="true" Dense="true">
+        <Columns>
+            <PropertyColumn Property="x => x.Name" Title="Agency" />
+            <PropertyColumn Property="x => x.PrimaryState" Title="State" />
+            <TemplateColumn Title="Status">
+                <CellTemplate>
+                    <MudChip T="string" Color="@GetStatusColor(context.Item.Status)" Size="Size.Small">
+                        @context.Item.Status
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Tier">
+                <CellTemplate>
+                    <MudChip T="string" Color="@GetTierColor(context.Item.Tier)" Size="Size.Small">
+                        @context.Item.Tier
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.ProducerCount" Title="Producers" />
+            <PropertyColumn Property="x => x.CreatedAt" Title="Created" Format="MM/dd/yyyy" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small"
+                                   Href="@($"/agencies/{context.Item.Id}")" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+
+    <MudPagination Class="mt-3" Count="_result.TotalPages" Selected="_page"
+                   SelectedChanged="PageChanged" />
+}
+
+@code {
+    private PagedResult<AgencySummaryDto>? _result;
+    private bool _loading;
+    private int _page = 1;
+    private AgencyStatus? _filterStatus;
+    private AgencyTier? _filterTier;
+    private string? _filterState;
+    private string? _searchTerm;
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        try
+        {
+            _result = await Mediator.Send(new GetAgenciesQuery(
+                _page, 25, _filterStatus, _filterTier, _filterState, _searchTerm));
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task PageChanged(int page)
+    {
+        _page = page;
+        await LoadData();
+    }
+
+    private void ClearFilters()
+    {
+        _filterStatus = null;
+        _filterTier = null;
+        _filterState = null;
+        _searchTerm = null;
+    }
+
+    private static Color GetStatusColor(AgencyStatus status) => status switch
+    {
+        AgencyStatus.Active => Color.Success,
+        AgencyStatus.Rejected or AgencyStatus.Terminated => Color.Error,
+        AgencyStatus.Suspended => Color.Warning,
+        _ => Color.Default
+    };
+
+    private static Color GetTierColor(AgencyTier tier) => tier switch
+    {
+        AgencyTier.Preferred => Color.Primary,
+        AgencyTier.Standard => Color.Info,
+        AgencyTier.Emerging => Color.Warning,
+        _ => Color.Default
+    };
+}

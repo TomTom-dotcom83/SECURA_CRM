@@ -1,0 +1,137 @@
+@page "/admin/appetite-tags"
+@attribute [Authorize(Policy = SecuraPolicies.CanAdminister)]
+@rendermode InteractiveServer
+@using MediatR
+
+<PageTitle>Appetite Tags — SECURA CRM</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Appetite Tag Configuration</MudText>
+
+<MudAlert Severity="Severity.Info" Class="mb-4">
+    Appetite tags are configurable labels assigned to submissions to communicate
+    carrier appetite by LOB and state. Tags display on submission grids and detail views.
+</MudAlert>
+
+<MudGrid>
+    <MudItem xs="12" md="8">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.subtitle1" Class="mb-3">Current Tags</MudText>
+            @if (_tags.Count == 0)
+            {
+                <MudText Color="Color.Secondary">No tags configured. Add your first tag below.</MudText>
+            }
+            else
+            {
+                <MudDataGrid T="AppetiteTagItem" Items="_tags" Dense="true" Hover="true">
+                    <Columns>
+                        <PropertyColumn Property="x => x.Label" Title="Label" />
+                        <PropertyColumn Property="x => x.Lob" Title="LOB" />
+                        <PropertyColumn Property="x => x.State" Title="State" />
+                        <TemplateColumn Title="Color">
+                            <CellTemplate>
+                                <MudChip T="string" Color="@ParseColor(context.Item.Color)" Size="Size.Small">
+                                    @context.Item.Color
+                                </MudChip>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="" Sortable="false">
+                            <CellTemplate>
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                               Color="Color.Error"
+                                               OnClick="() => RemoveTag(context.Item)" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.subtitle1" Class="mb-3">Add Tag</MudText>
+            <MudTextField @bind-Value="_newLabel" Label="Label" Class="mb-2" />
+            <MudSelect @bind-Value="_newLob" Label="LOB" Class="mb-2" T="string">
+                @foreach (var lob in LobOptions)
+                {
+                    <MudSelectItem Value="@lob">@lob</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="_newState" Label="State (2-letter or ALL)" MaxLength="3" Class="mb-2" />
+            <MudSelect @bind-Value="_newColor" Label="Color" Class="mb-2" T="string">
+                @foreach (var c in ColorOptions)
+                {
+                    <MudSelectItem Value="@c">@c</MudSelectItem>
+                }
+            </MudSelect>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
+                       OnClick="AddTag"
+                       Disabled="string.IsNullOrWhiteSpace(_newLabel) || string.IsNullOrWhiteSpace(_newLob)">
+                Add Tag
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private readonly List<AppetiteTagItem> _tags = [];
+    private string? _newLabel;
+    private string? _newLob;
+    private string? _newState = "ALL";
+    private string? _newColor = "Default";
+
+    private static readonly string[] LobOptions =
+    [
+        "BOP", "CommercialAuto", "GeneralLiability",
+        "CommercialProperty", "WorkersCompensation", "CommercialUmbrella",
+        "ProfessionalLiability", "CyberLiability", "DirectorsAndOfficers",
+        "EmploymentPractices", "PersonalAuto", "Homeowners", "Other"
+    ];
+
+    private static readonly string[] ColorOptions =
+    [
+        "Default", "Primary", "Secondary", "Info",
+        "Success", "Warning", "Error", "Dark"
+    ];
+
+    private void AddTag()
+    {
+        if (string.IsNullOrWhiteSpace(_newLabel) || string.IsNullOrWhiteSpace(_newLob))
+            return;
+
+        _tags.Add(new AppetiteTagItem
+        {
+            Label = _newLabel.Trim(),
+            Lob = _newLob,
+            State = _newState ?? "ALL",
+            Color = _newColor ?? "Default"
+        });
+
+        _newLabel = null;
+        _newLob = null;
+        _newState = "ALL";
+        _newColor = "Default";
+    }
+
+    private void RemoveTag(AppetiteTagItem tag) => _tags.Remove(tag);
+
+    private static Color ParseColor(string? c) => c switch
+    {
+        "Primary" => Color.Primary,
+        "Secondary" => Color.Secondary,
+        "Info" => Color.Info,
+        "Success" => Color.Success,
+        "Warning" => Color.Warning,
+        "Error" => Color.Error,
+        "Dark" => Color.Dark,
+        _ => Color.Default
+    };
+
+    private sealed class AppetiteTagItem
+    {
+        public string Label { get; set; } = string.Empty;
+        public string Lob { get; set; } = string.Empty;
+        public string State { get; set; } = "ALL";
+        public string Color { get; set; } = "Default";
+    }
+}

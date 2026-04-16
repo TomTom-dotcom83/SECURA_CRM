@@ -1,0 +1,73 @@
+@page "/admin/checklist-templates"
+@attribute [Authorize(Policy = SecuraPolicies.CanAdminister)]
+@rendermode InteractiveServer
+@using MediatR
+
+<PageTitle>Checklist Template Editor — SECURA CRM</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Onboarding Checklist Templates</MudText>
+
+<MudAlert Severity="Severity.Info" Class="mb-4">
+    Configure onboarding checklist step templates per agency tier. Templates are applied
+    when a new agency is created and an onboarding checklist is initialized.
+</MudAlert>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.subtitle1" Class="mb-3">Standard Template Steps</MudText>
+            <MudList T="string" Dense="true">
+                @foreach (var step in _defaultSteps)
+                {
+                    <MudListItem Icon="@Icons.Material.Filled.CheckBoxOutlineBlank">
+                        @step
+                    </MudListItem>
+                }
+            </MudList>
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                Full template customization is available in Milestone 6.
+            </MudText>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.subtitle1" Class="mb-3">New Step</MudText>
+            <MudTextField @bind-Value="_newStepName" Label="Step Name" />
+            <MudTextField @bind-Value="_newStepDesc" Label="Description" Class="mt-2" Lines="2" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3"
+                       OnClick="AddStep" Disabled="string.IsNullOrWhiteSpace(_newStepName)">
+                Add Step
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private readonly List<string> _defaultSteps =
+    [
+        "Verify agency licensing in all required states",
+        "Collect and validate E&O insurance certificate",
+        "Complete carrier appointment paperwork",
+        "Conduct agency principal background check",
+        "Review and sign carrier distribution agreement",
+        "Complete carrier product training",
+        "Set up agency portal access and credentials",
+        "Verify banking / commission payment details",
+        "Confirm first submission received and processed"
+    ];
+
+    private string? _newStepName;
+    private string? _newStepDesc;
+
+    private void AddStep()
+    {
+        if (!string.IsNullOrWhiteSpace(_newStepName))
+        {
+            _defaultSteps.Add(_newStepName.Trim());
+            _newStepName = null;
+            _newStepDesc = null;
+        }
+    }
+}

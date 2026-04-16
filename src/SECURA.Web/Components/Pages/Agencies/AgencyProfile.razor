@@ -1,0 +1,139 @@
+@page "/agencies/{Id:guid}"
+@attribute [Authorize(Policy = SecuraPolicies.ReadOnly)]
+@rendermode InteractiveServer
+@inject IMediator Mediator
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+@using SECURA.Application.Agencies.DTOs
+@using SECURA.Application.Agencies.Queries
+@using MediatR
+
+<PageTitle>@(_agency?.Name ?? "Agency") — SECURA CRM</PageTitle>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_agency != null)
+{
+    <!-- Header -->
+    <MudPaper Class="pa-4 mb-4">
+        <MudGrid AlignItems="Center">
+            <MudItem xs="12" md="8">
+                <MudText Typo="Typo.h5">@_agency.Name</MudText>
+                <MudStack Row="true" Spacing="2" Class="mt-2">
+                    <MudChip T="string" Color="@GetStatusColor(_agency.Status)" Size="Size.Small">
+                        @_agency.Status
+                    </MudChip>
+                    <MudChip T="string" Size="Size.Small">@_agency.Tier</MudChip>
+                    <MudChip T="string" Size="Size.Small" Icon="@Icons.Material.Filled.LocationOn">
+                        @_agency.PrimaryState
+                    </MudChip>
+                </MudStack>
+                <MudText Typo="Typo.caption" Class="mt-1">
+                    @_agency.BranchCount branches · @_agency.ProducerCount producers ·
+                    @_agency.ActiveLicenseCount active licenses
+                </MudText>
+            </MudItem>
+            <MudItem xs="12" md="4" Class="d-flex justify-end gap-2">
+                <AuthorizeView Policy="@SecuraPolicies.CanManageAgencies">
+                    <MudButton Variant="Variant.Outlined" Href="@($"/agencies/{Id}/edit")">
+                        Edit
+                    </MudButton>
+                </AuthorizeView>
+                <MudButton Variant="Variant.Text" Href="/agencies">
+                    Back
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <!-- Tabs -->
+    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4">
+        <MudTabPanel Text="Overview" Icon="@Icons.Material.Filled.Info">
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudList T="string">
+                        <MudListItem Icon="@Icons.Material.Filled.Email">
+                            <MudText>@(_agency.Email ?? "—")</MudText>
+                        </MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.Phone">
+                            <MudText>@(_agency.Phone ?? "—")</MudText>
+                        </MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.Web">
+                            <MudText>@(_agency.Website ?? "—")</MudText>
+                        </MudListItem>
+                    </MudList>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudText Typo="Typo.subtitle2">Notes</MudText>
+                    <MudText>@(_agency.Notes ?? "No notes recorded.")</MudText>
+                </MudItem>
+            </MudGrid>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Producers" Icon="@Icons.Material.Filled.People">
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Producer list — loads from GET /api/v1/producers?agencyId=@Id
+            </MudText>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Compliance" Icon="@Icons.Material.Filled.Shield">
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                License & appointment compliance view — Milestone 3
+            </MudText>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Submissions" Icon="@Icons.Material.Filled.Description">
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Submissions for this agency — Milestone 4
+            </MudText>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Interactions" Icon="@Icons.Material.Filled.Forum">
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Interaction timeline — Milestone 5
+            </MudText>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Documents" Icon="@Icons.Material.Filled.Folder">
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Documents metadata — Milestone 5
+            </MudText>
+        </MudTabPanel>
+    </MudTabs>
+}
+else
+{
+    <MudAlert Severity="Severity.Error">Agency not found.</MudAlert>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private AgencyDto? _agency;
+    private bool _loading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try
+        {
+            _agency = await Mediator.Send(new GetAgencyByIdQuery(Id));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally { _loading = false; }
+    }
+
+    private static Color GetStatusColor(SECURA.Domain.Enums.AgencyStatus status) => status switch
+    {
+        SECURA.Domain.Enums.AgencyStatus.Active => Color.Success,
+        SECURA.Domain.Enums.AgencyStatus.Rejected
+            or SECURA.Domain.Enums.AgencyStatus.Terminated => Color.Error,
+        SECURA.Domain.Enums.AgencyStatus.Suspended => Color.Warning,
+        _ => Color.Default
+    };
+}

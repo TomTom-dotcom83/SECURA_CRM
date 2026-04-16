@@ -1,0 +1,92 @@
+@page "/admin/compliance"
+@attribute [Authorize(Policy = SecuraPolicies.CanViewCompliance)]
+@rendermode InteractiveServer
+@inject IMediator Mediator
+@using SECURA.Application.Compliance.Queries
+@using SECURA.Application.Compliance.DTOs
+@using SECURA.Application.Producers.DTOs
+@using MediatR
+
+<PageTitle>Compliance Dashboard — SECURA CRM</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Compliance Dashboard</MudText>
+
+<MudGrid Class="mb-4">
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Expiring Within 30 Days</MudText>
+            <MudText Typo="Typo.h4" Color="Color.Error">@_expiring30.Count</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Expiring Within 60 Days</MudText>
+            <MudText Typo="Typo.h4" Color="Color.Warning">@_expiring60.Count</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Expiring Within 90 Days</MudText>
+            <MudText Typo="Typo.h4" Color="Color.Info">@_expiring90.Count</MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.subtitle1" Class="mb-3">Licenses Expiring Within 30 Days</MudText>
+        @if (_expiring30.Count == 0)
+        {
+            <MudAlert Severity="Severity.Success">No licenses expiring within 30 days.</MudAlert>
+        }
+        else
+        {
+            <MudDataGrid T="LicenseDto" Items="_expiring30" Hover="true" Dense="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.State" Title="State" />
+                    <PropertyColumn Property="x => x.Lob" Title="LOB" />
+                    <PropertyColumn Property="x => x.Status" Title="Status" />
+                    <PropertyColumn Property="x => x.ExpirationDate" Title="Expires" Format="MM/dd/yyyy" />
+                    <PropertyColumn Property="x => x.LicenseNumber" Title="License #" />
+                    <TemplateColumn Title="">
+                        <CellTemplate>
+                            @if (context.Item.IsExpired)
+                            {
+                                <MudChip T="string" Color="Color.Error" Size="Size.Small">EXPIRED</MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        }
+    </MudPaper>
+}
+
+@code {
+    private IReadOnlyList<LicenseDto> _expiring30 = [];
+    private IReadOnlyList<LicenseDto> _expiring60 = [];
+    private IReadOnlyList<LicenseDto> _expiring90 = [];
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try
+        {
+            var tasks = await Task.WhenAll(
+                Mediator.Send(new GetExpiringLicensesQuery(30)),
+                Mediator.Send(new GetExpiringLicensesQuery(60)),
+                Mediator.Send(new GetExpiringLicensesQuery(90)));
+
+            _expiring30 = tasks[0];
+            _expiring60 = tasks[1];
+            _expiring90 = tasks[2];
+        }
+        finally { _loading = false; }
+    }
+}

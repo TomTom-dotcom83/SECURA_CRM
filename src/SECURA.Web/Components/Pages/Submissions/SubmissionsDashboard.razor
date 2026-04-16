@@ -1,0 +1,98 @@
+@page "/submissions/dashboard"
+@attribute [Authorize(Policy = SecuraPolicies.CanViewSubmissions)]
+@rendermode InteractiveServer
+@inject IMediator Mediator
+@using SECURA.Application.Reports.Queries
+@using SECURA.Application.Reports.DTOs
+@using MediatR
+
+<PageTitle>Pipeline Dashboard — SECURA CRM</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Submission Pipeline Dashboard</MudText>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_report != null)
+{
+    <!-- KPI Row -->
+    <MudGrid Class="mb-4">
+        <MudItem xs="6" md="3">
+            <MudPaper Class="pa-4 text-center">
+                <MudText Typo="Typo.h4">@(_report.NewCount + _report.TriagedCount + _report.InReviewCount + _report.ReferredCount + _report.QuotedCount)</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Open Submissions</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudPaper Class="pa-4 text-center">
+                <MudText Typo="Typo.h4" Color="Color.Success">@_report.BoundCount</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Bound</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudPaper Class="pa-4 text-center">
+                <MudText Typo="Typo.h4" Color="@(_report.OverdueCount > 0 ? Color.Error : Color.Default)">
+                    @_report.OverdueCount
+                </MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Overdue</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudPaper Class="pa-4 text-center">
+                <MudText Typo="Typo.h4" Color="@SlaColor(_report.SlaAdherencePercent)">
+                    @_report.SlaAdherencePercent%
+                </MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">SLA Adherence</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Pipeline Funnel -->
+    <MudPaper Class="pa-4 mb-4">
+        <MudText Typo="Typo.subtitle1" Class="mb-3">Pipeline by Stage</MudText>
+        <MudGrid>
+            @foreach (var (label, count, color) in PipelineStages())
+            {
+                <MudItem xs="12" sm="6" md="3">
+                    <MudPaper Outlined="true" Class="pa-3 text-center">
+                        <MudChip T="string" Color="color" Size="Size.Small" Class="mb-1">@label</MudChip>
+                        <MudText Typo="Typo.h5">@count</MudText>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    </MudPaper>
+
+    <MudText Typo="Typo.caption" Color="Color.Secondary">
+        Generated @_report.GeneratedAt.ToString("yyyy-MM-dd HH:mm") UTC ·
+        <MudLink Href="/submissions">View all submissions</MudLink>
+    </MudText>
+}
+
+@code {
+    private PipelineReportDto? _report;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try { _report = await Mediator.Send(new GetPipelineReportQuery()); }
+        finally { _loading = false; }
+    }
+
+    private IEnumerable<(string Label, int Count, Color Color)> PipelineStages()
+    {
+        if (_report is null) yield break;
+        yield return ("New", _report.NewCount, Color.Default);
+        yield return ("Triaged", _report.TriagedCount, Color.Info);
+        yield return ("In Review", _report.InReviewCount, Color.Primary);
+        yield return ("Referred", _report.ReferredCount, Color.Warning);
+        yield return ("Quoted", _report.QuotedCount, Color.Secondary);
+        yield return ("Bound", _report.BoundCount, Color.Success);
+        yield return ("Declined", _report.DeclinedCount, Color.Error);
+    }
+
+    private static Color SlaColor(decimal pct) =>
+        pct >= 90 ? Color.Success : pct >= 75 ? Color.Warning : Color.Error;
+}

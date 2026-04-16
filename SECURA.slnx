@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SECURA.Application/SECURA.Application.csproj" />
+    <Project Path="src/SECURA.Domain/SECURA.Domain.csproj" />
+    <Project Path="src/SECURA.Infrastructure/SECURA.Infrastructure.csproj" />
+    <Project Path="src/SECURA.Web.Client/SECURA.Web.Client.csproj" />
+    <Project Path="src/SECURA.Web/SECURA.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SECURA.Application.Tests/SECURA.Application.Tests.csproj" />
+    <Project Path="tests/SECURA.Domain.Tests/SECURA.Domain.Tests.csproj" />
+    <Project Path="tests/SECURA.Infrastructure.Tests/SECURA.Infrastructure.Tests.csproj" />
+  </Folder>
+</Solution>

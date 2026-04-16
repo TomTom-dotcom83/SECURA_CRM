@@ -1,0 +1,43 @@
+@page "/"
+@attribute [Authorize(Policy = SecuraPolicies.ReadOnly)]
+@rendermode InteractiveServer
+
+<PageTitle>Dashboard — SECURA CRM</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Distribution Dashboard</MudText>
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-4 d-flex flex-column align-center">
+            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Large" Color="Color.Primary" />
+            <MudText Typo="Typo.h4">—</MudText>
+            <MudText Typo="Typo.subtitle2">Active Agencies</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-4 d-flex flex-column align-center">
+            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Large" Color="Color.Secondary" />
+            <MudText Typo="Typo.h4">—</MudText>
+            <MudText Typo="Typo.subtitle2">Active Producers</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-4 d-flex flex-column align-center">
+            <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Large" Color="Color.Info" />
+            <MudText Typo="Typo.h4">—</MudText>
+            <MudText Typo="Typo.subtitle2">Open Submissions</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Class="pa-4 d-flex flex-column align-center">
+            <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Large" Color="Color.Error" />
+            <MudText Typo="Typo.h4">—</MudText>
+            <MudText Typo="Typo.subtitle2">Compliance Alerts</MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<MudAlert Severity="Severity.Info" Class="mt-4">
+    Live KPI data will be wired in Milestone 6. Navigate to <strong>Agencies</strong> or
+    <strong>Submissions</strong> to see working data.
+</MudAlert>

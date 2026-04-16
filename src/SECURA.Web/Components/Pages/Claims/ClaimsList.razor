@@ -1,0 +1,99 @@
+@page "/claims"
+@attribute [Authorize(Policy = SecuraPolicies.CanViewClaims)]
+@rendermode InteractiveServer
+@inject IMediator Mediator
+@using SECURA.Application.Claims.DTOs
+@using SECURA.Application.Claims.Queries
+@using MediatR
+
+<PageTitle>Claims — SECURA CRM</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Claim References</MudText>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudGrid>
+        <MudItem xs="12" md="4">
+            <MudTextField @bind-Value="_agencyIdText" Label="Agency ID (GUID)" />
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudSelect T="ClaimStatus?" Label="Status" @bind-Value="_filterStatus" Clearable="true">
+                @foreach (var s in Enum.GetValues<ClaimStatus>())
+                {
+                    <MudSelectItem Value="(ClaimStatus?)s">@s</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="4" Class="d-flex align-end">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadData">
+                Search
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_result != null)
+{
+    <MudDataGrid T="ClaimReferenceDto" Items="_result.Items" Hover="true" Dense="true">
+        <Columns>
+            <PropertyColumn Property="x => x.ExternalClaimNumber" Title="Claim #" />
+            <PropertyColumn Property="x => x.AgencyName" Title="Agency" />
+            <PropertyColumn Property="x => x.Lob" Title="LOB" />
+            <TemplateColumn Title="Status">
+                <CellTemplate>
+                    <MudChip T="string" Color="@GetStatusColor(context.Item.Status)" Size="Size.Small">
+                        @context.Item.Status
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.LossDate" Title="Loss Date" Format="MM/dd/yyyy" />
+            <PropertyColumn Property="x => x.InsuredName" Title="Insured" />
+            <TemplateColumn Title="" Sortable="false">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small"
+                                   Href="@($"/claims/{context.Item.Id}")" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+
+    <MudPagination Class="mt-3" Count="_result.TotalPages" Selected="_page"
+                   SelectedChanged="PageChanged" />
+}
+
+@code {
+    private PagedResult<ClaimReferenceDto>? _result;
+    private bool _loading;
+    private int _page = 1;
+    private ClaimStatus? _filterStatus;
+    private string? _agencyIdText;
+
+    private async Task LoadData()
+    {
+        if (!Guid.TryParse(_agencyIdText, out var agencyId))
+            return;
+
+        _loading = true;
+        try
+        {
+            _result = await Mediator.Send(new GetClaimsByAgencyQuery(agencyId, _page, 25, _filterStatus));
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task PageChanged(int page) { _page = page; await LoadData(); }
+
+    private static Color GetStatusColor(ClaimStatus s) => s switch
+    {
+        ClaimStatus.Open => Color.Info,
+        ClaimStatus.UnderInvestigation => Color.Warning,
+        ClaimStatus.PendingPayment => Color.Secondary,
+        ClaimStatus.Closed => Color.Success,
+        ClaimStatus.Denied => Color.Error,
+        ClaimStatus.Reopened => Color.Warning,
+        _ => Color.Default
+    };
+}

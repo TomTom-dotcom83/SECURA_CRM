@@ -1,0 +1,127 @@
+@page "/submissions/{Id:guid}"
+@attribute [Authorize(Policy = SecuraPolicies.CanViewSubmissions)]
+@rendermode InteractiveServer
+@inject IMediator Mediator
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+@using MediatR
+@using SECURA.Application.Submissions.Commands
+@using SECURA.Application.Submissions.DTOs
+@using SECURA.Application.Submissions.Queries
+
+<PageTitle>Submission — SECURA CRM</PageTitle>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_submission != null)
+{
+    <MudPaper Class="pa-4 mb-4">
+        <MudGrid>
+            <MudItem xs="12" md="8">
+                <MudText Typo="Typo.h6">@(_submission.InsuredName ?? "Unknown Insured")</MudText>
+                <MudStack Row="true" Spacing="2" Class="mt-1">
+                    <MudChip T="string" Color="@GetStatusColor(_submission.Status)" Size="Size.Small">
+                        @_submission.Status
+                    </MudChip>
+                    <MudChip T="string" Size="Size.Small">@_submission.Lob</MudChip>
+                    <MudChip T="string" Size="Size.Small">@_submission.State</MudChip>
+                    @if (_submission.IsOverdue)
+                    {
+                        <MudChip T="string" Color="Color.Error" Size="Size.Small">OVERDUE</MudChip>
+                    }
+                </MudStack>
+                <MudText Typo="Typo.caption">Agency: @_submission.AgencyName</MudText>
+            </MudItem>
+            <MudItem xs="12" md="4" Class="d-flex justify-end">
+                <MudButton Href="/submissions">Back</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudGrid>
+        <MudItem xs="12" md="8">
+            <!-- UW Notes Thread -->
+            <MudPaper Class="pa-4 mb-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-3">Underwriting Notes</MudText>
+                @foreach (var note in _submission.UWNotes.OrderByDescending(n => n.CreatedDate))
+                {
+                    <MudPaper Outlined="true" Class="pa-3 mb-2">
+                        <MudText Typo="Typo.caption">
+                            @note.AuthorUserId · @note.CreatedDate.ToString("MM/dd/yyyy HH:mm")
+                        </MudText>
+                        <MudText>@note.NoteText</MudText>
+                    </MudPaper>
+                }
+
+                <MudDivider Class="my-3" />
+                <MudTextField @bind-Value="_newNote" Label="Add Note" Lines="3" />
+                <MudButton Class="mt-2" Variant="Variant.Filled" Color="Color.Primary"
+                           OnClick="AddNote" Disabled="string.IsNullOrWhiteSpace(_newNote)">
+                    Add Note
+                </MudButton>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <!-- Right rail: details -->
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle2">Details</MudText>
+                <MudList T="string" Dense="true">
+                    <MudListItem>Received: @_submission.ReceivedDate.ToString("MM/dd/yyyy")</MudListItem>
+                    <MudListItem>SLA: @_submission.SlaDeadline.ToString("MM/dd/yyyy HH:mm")</MudListItem>
+                    @if (_submission.QuoteNumber != null)
+                    {
+                        <MudListItem>Quote#: @_submission.QuoteNumber</MudListItem>
+                    }
+                    @if (_submission.QuotedPremium.HasValue)
+                    {
+                        <MudListItem>Premium: @_submission.QuotedPremium?.ToString("C")</MudListItem>
+                    }
+                </MudList>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+else
+{
+    <MudAlert Severity="Severity.Error">Submission not found.</MudAlert>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private SubmissionDto? _submission;
+    private bool _loading;
+    private string? _newNote;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try { _submission = await Mediator.Send(new GetSubmissionByIdQuery(Id)); }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _loading = false; }
+    }
+
+    private async Task AddNote()
+    {
+        if (string.IsNullOrWhiteSpace(_newNote)) return;
+        try
+        {
+            await Mediator.Send(new AddUWNoteCommand(Id, _newNote));
+            _newNote = null;
+            _submission = await Mediator.Send(new GetSubmissionByIdQuery(Id));
+            Snackbar.Add("Note added.", Severity.Success);
+        }
+        catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+    }
+
+    private static Color GetStatusColor(SECURA.Domain.Enums.SubmissionStatus s) => s switch
+    {
+        SECURA.Domain.Enums.SubmissionStatus.Bound => Color.Success,
+        SECURA.Domain.Enums.SubmissionStatus.Declined => Color.Error,
+        SECURA.Domain.Enums.SubmissionStatus.Quoted => Color.Info,
+        _ => Color.Default
+    };
+}
