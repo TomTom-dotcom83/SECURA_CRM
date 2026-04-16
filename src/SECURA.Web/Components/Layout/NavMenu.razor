@@ -1,3 +1,7 @@
+@rendermode InteractiveServer
+@using SECURA.Web.Auth
+@using Microsoft.AspNetCore.Authorization
+
 <MudNavMenu>
     <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
         Dashboard
@@ -21,28 +25,28 @@
         </MudNavLink>
     </MudNavGroup>
 
-    <AuthorizeView Policy="@SecuraPolicies.CanViewCompliance">
-        <MudNavGroup Title="Compliance" Icon="@Icons.Material.Filled.VerifiedUser">
+    <MudNavGroup Title="Compliance" Icon="@Icons.Material.Filled.VerifiedUser" Expanded="true">
+        <AuthorizeView Policy="@SecuraPolicies.CanViewCompliance">
             <MudNavLink Href="/admin/compliance" Icon="@Icons.Material.Filled.Shield">
                 Compliance Dashboard
             </MudNavLink>
-        </MudNavGroup>
-    </AuthorizeView>
+        </AuthorizeView>
+    </MudNavGroup>
 
-    <MudNavGroup Title="Claims" Icon="@Icons.Material.Filled.Gavel">
+    <MudNavGroup Title="Claims" Icon="@Icons.Material.Filled.Gavel" Expanded="true">
         <MudNavLink Href="/claims" Icon="@Icons.Material.Filled.ReportProblem">
             Claims
         </MudNavLink>
     </MudNavGroup>
 
-    <MudNavGroup Title="Resources" Icon="@Icons.Material.Filled.Folder">
+    <MudNavGroup Title="Resources" Icon="@Icons.Material.Filled.Folder" Expanded="true">
         <MudNavLink Href="/documents" Icon="@Icons.Material.Filled.InsertDriveFile">
             Documents
         </MudNavLink>
     </MudNavGroup>
 
-    <AuthorizeView Policy="@SecuraPolicies.CanViewReports">
-        <MudNavGroup Title="Analytics" Icon="@Icons.Material.Filled.BarChart">
+    <MudNavGroup Title="Analytics" Icon="@Icons.Material.Filled.BarChart" Expanded="true">
+        <AuthorizeView Policy="@SecuraPolicies.CanViewReports">
             <MudNavLink Href="/reports/agency-scorecard" Icon="@Icons.Material.Filled.Assessment">
                 Agency Scorecard
             </MudNavLink>
@@ -52,17 +56,17 @@
             <MudNavLink Href="/reports/compliance" Icon="@Icons.Material.Filled.FactCheck">
                 Compliance Summary
             </MudNavLink>
-        </MudNavGroup>
-    </AuthorizeView>
+        </AuthorizeView>
+    </MudNavGroup>
 
-    <AuthorizeView Policy="@SecuraPolicies.CanAdminister">
-        <MudNavGroup Title="Admin" Icon="@Icons.Material.Filled.Settings">
+    <MudNavGroup Title="Admin" Icon="@Icons.Material.Filled.Settings" Expanded="true">
+        <AuthorizeView Policy="@SecuraPolicies.CanAdminister">
             <MudNavLink Href="/admin/checklist-templates" Icon="@Icons.Material.Filled.Checklist">
                 Checklist Templates
             </MudNavLink>
             <MudNavLink Href="/admin/appetite-tags" Icon="@Icons.Material.Filled.Label">
                 Appetite Tags
             </MudNavLink>
-        </MudNavGroup>
-    </AuthorizeView>
+        </AuthorizeView>
+    </MudNavGroup>
 </MudNavMenu>
