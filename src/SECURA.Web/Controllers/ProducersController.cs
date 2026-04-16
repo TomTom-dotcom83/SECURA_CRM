@@ -2,6 +2,8 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SECURA.Application.Producers.Commands;
+using SECURA.Application.Producers.Queries;
+using SECURA.Domain.Enums;
 using SECURA.Web.Auth;
 
 namespace SECURA.Web.Controllers;
@@ -16,6 +18,22 @@ public sealed class ProducersController : ControllerBase
     public ProducersController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetProducers(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25,
+        [FromQuery] Guid? agencyId = null,
+        [FromQuery] LicenseStatus? licenseStatus = null,
+        [FromQuery] bool? activeOnly = null,
+        [FromQuery] string? search = null,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(
+            new GetProducersQuery(page, pageSize, agencyId, licenseStatus, activeOnly, search),
+            cancellationToken);
+        return Ok(result);
     }
 
     [HttpPost]

@@ -6,6 +6,10 @@
 @inject ISnackbar Snackbar
 @using SECURA.Application.Agencies.DTOs
 @using SECURA.Application.Agencies.Queries
+@using SECURA.Application.Producers.DTOs
+@using SECURA.Application.Producers.Queries
+@using SECURA.Application.Submissions.DTOs
+@using SECURA.Application.Submissions.Queries
 @using MediatR
 
 <PageTitle>@(_agency?.Name ?? "Agency") — SECURA CRM</PageTitle>
@@ -49,7 +53,10 @@ else if (_agency != null)
     </MudPaper>
 
     <!-- Tabs -->
-    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4">
+    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4"
+             ActivePanelIndexChanged="OnTabChanged">
+
+        <!-- ── Overview ─────────────────────────────────────────────────────── -->
         <MudTabPanel Text="Overview" Icon="@Icons.Material.Filled.Info">
             <MudGrid>
                 <MudItem xs="12" md="6">
@@ -72,35 +79,172 @@ else if (_agency != null)
             </MudGrid>
         </MudTabPanel>
 
+        <!-- ── Producers ─────────────────────────────────────────────────────── -->
         <MudTabPanel Text="Producers" Icon="@Icons.Material.Filled.People">
-            <MudText Typo="Typo.body2" Color="Color.Secondary">
-                Producer list — loads from GET /api/v1/producers?agencyId=@Id
-            </MudText>
+            @if (_producersLoading)
+            {
+                <MudProgressLinear Indeterminate="true" />
+            }
+            else if (_producers?.Items.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info">No producers assigned to this agency.</MudAlert>
+            }
+            else if (_producers != null)
+            {
+                <MudDataGrid T="ProducerSummaryDto" Items="_producers.Items" Hover="true" Dense="true"
+                             SortMode="SortMode.Single">
+                    <Columns>
+                        <PropertyColumn Property="x => x.Npn" Title="NPN" />
+                        <PropertyColumn Property="x => x.FullName" Title="Name" />
+                        <TemplateColumn Title="License Status">
+                            <CellTemplate>
+                                <MudChip T="string" Color="@GetLicenseColor(context.Item.LicenseStatus)" Size="Size.Small">
+                                    @context.Item.LicenseStatus
+                                </MudChip>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="x => x.ActiveLicenseCount" Title="Active Licenses" />
+                        <TemplateColumn Title="Active">
+                            <CellTemplate>
+                                @if (context.Item.ActiveFlag)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                                }
+                                else
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" />
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="">
+                            <CellTemplate>
+                                <MudButton Size="Size.Small" Variant="Variant.Text"
+                                           Href="@($"/producers/{context.Item.Id}")">View</MudButton>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            }
         </MudTabPanel>
 
+        <!-- ── Compliance ────────────────────────────────────────────────────── -->
         <MudTabPanel Text="Compliance" Icon="@Icons.Material.Filled.Shield">
-            <MudText Typo="Typo.body2" Color="Color.Secondary">
-                License & appointment compliance view — Milestone 3
-            </MudText>
+            @if (_producersLoading)
+            {
+                <MudProgressLinear Indeterminate="true" />
+            }
+            else if (_producers?.Items.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info">No producers to show compliance data for.</MudAlert>
+            }
+            else if (_producers != null)
+            {
+                var expiredCount   = _producers.Items.Count(p => p.LicenseStatus == LicenseStatus.Expired);
+                var suspendedCount = _producers.Items.Count(p => p.LicenseStatus == LicenseStatus.Suspended);
+
+                @if (expiredCount > 0 || suspendedCount > 0)
+                {
+                    <MudAlert Severity="Severity.Warning" Class="mb-3">
+                        @if (expiredCount > 0)   { <span>@expiredCount expired license@(expiredCount   == 1 ? "" : "s"). </span> }
+                        @if (suspendedCount > 0) { <span>@suspendedCount suspended license@(suspendedCount == 1 ? "" : "s").</span> }
+                    </MudAlert>
+                }
+
+                <MudDataGrid T="ProducerSummaryDto" Items="_producers.Items" Hover="true" Dense="true"
+                             SortMode="SortMode.Single">
+                    <Columns>
+                        <PropertyColumn Property="x => x.Npn" Title="NPN" />
+                        <PropertyColumn Property="x => x.FullName" Title="Producer" />
+                        <TemplateColumn Title="License Status">
+                            <CellTemplate>
+                                <MudChip T="string" Color="@GetLicenseColor(context.Item.LicenseStatus)" Size="Size.Small">
+                                    @context.Item.LicenseStatus
+                                </MudChip>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="x => x.ActiveLicenseCount" Title="Active Licenses" />
+                        <TemplateColumn Title="Compliance">
+                            <CellTemplate>
+                                @{
+                                    var ok = context.Item.LicenseStatus == LicenseStatus.Active
+                                             && context.Item.ActiveLicenseCount > 0;
+                                }
+                                @if (ok)
+                                {
+                                    <MudChip T="string" Color="Color.Success" Size="Size.Small">Compliant</MudChip>
+                                }
+                                else
+                                {
+                                    <MudChip T="string" Color="Color.Error" Size="Size.Small">Review Required</MudChip>
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            }
         </MudTabPanel>
 
+        <!-- ── Submissions ───────────────────────────────────────────────────── -->
         <MudTabPanel Text="Submissions" Icon="@Icons.Material.Filled.Description">
-            <MudText Typo="Typo.body2" Color="Color.Secondary">
-                Submissions for this agency — Milestone 4
-            </MudText>
+            @if (_submissionsLoading)
+            {
+                <MudProgressLinear Indeterminate="true" />
+            }
+            else if (_submissions?.Items.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info">No submissions for this agency.</MudAlert>
+            }
+            else if (_submissions != null)
+            {
+                <MudDataGrid T="SubmissionSummaryDto" Items="_submissions.Items" Hover="true" Dense="true"
+                             SortMode="SortMode.Single">
+                    <Columns>
+                        <PropertyColumn Property="x => x.InsuredName" Title="Insured" />
+                        <PropertyColumn Property="x => x.Lob" Title="LOB" />
+                        <PropertyColumn Property="x => x.State" Title="State" />
+                        <TemplateColumn Title="Status">
+                            <CellTemplate>
+                                <MudChip T="string" Color="@GetSubmissionColor(context.Item.Status)" Size="Size.Small">
+                                    @context.Item.Status
+                                </MudChip>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="x => x.ReceivedDate" Title="Received" Format="yyyy-MM-dd" />
+                        <TemplateColumn Title="SLA">
+                            <CellTemplate>
+                                @if (context.Item.IsOverdue)
+                                {
+                                    <MudChip T="string" Color="Color.Error" Size="Size.Small" Icon="@Icons.Material.Filled.Warning">
+                                        Overdue
+                                    </MudChip>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.body2">@context.Item.SlaDeadline.ToString("yyyy-MM-dd")</MudText>
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="">
+                            <CellTemplate>
+                                <MudButton Size="Size.Small" Variant="Variant.Text"
+                                           Href="@($"/submissions/{context.Item.Id}")">View</MudButton>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            }
         </MudTabPanel>
 
+        <!-- ── Interactions ──────────────────────────────────────────────────── -->
         <MudTabPanel Text="Interactions" Icon="@Icons.Material.Filled.Forum">
-            <MudText Typo="Typo.body2" Color="Color.Secondary">
-                Interaction timeline — Milestone 5
-            </MudText>
+            <MudAlert Severity="Severity.Info">Interaction timeline coming soon.</MudAlert>
         </MudTabPanel>
 
+        <!-- ── Documents ─────────────────────────────────────────────────────── -->
         <MudTabPanel Text="Documents" Icon="@Icons.Material.Filled.Folder">
-            <MudText Typo="Typo.body2" Color="Color.Secondary">
-                Documents metadata — Milestone 5
-            </MudText>
+            <MudAlert Severity="Severity.Info">Document library coming soon.</MudAlert>
         </MudTabPanel>
+
     </MudTabs>
 }
 else
@@ -111,8 +255,14 @@ else
 @code {
     [Parameter] public Guid Id { get; set; }
 
-    private AgencyDto? _agency;
+    private AgencyDto?                       _agency;
+    private PagedResult<ProducerSummaryDto>?  _producers;
+    private PagedResult<SubmissionSummaryDto>? _submissions;
     private bool _loading;
+    private bool _producersLoaded;
+    private bool _submissionsLoaded;
+    private bool _producersLoading;
+    private bool _submissionsLoading;
 
     protected override async Task OnInitializedAsync()
     {
@@ -128,12 +278,61 @@ else
         finally { _loading = false; }
     }
 
+    private async Task OnTabChanged(int index)
+    {
+        // Tab 1 = Producers, Tab 2 = Compliance (both use same producer data)
+        if ((index == 1 || index == 2) && !_producersLoaded)
+        {
+            _producersLoading = true;
+            try
+            {
+                _producers = await Mediator.Send(
+                    new GetProducersQuery(1, 100, AgencyId: Id));
+                _producersLoaded = true;
+            }
+            catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+            finally { _producersLoading = false; }
+        }
+
+        // Tab 3 = Submissions
+        if (index == 3 && !_submissionsLoaded)
+        {
+            _submissionsLoading = true;
+            try
+            {
+                _submissions = await Mediator.Send(
+                    new GetSubmissionsQuery(1, 50, AgencyId: Id));
+                _submissionsLoaded = true;
+            }
+            catch (Exception ex) { Snackbar.Add(ex.Message, Severity.Error); }
+            finally { _submissionsLoading = false; }
+        }
+    }
+
     private static Color GetStatusColor(SECURA.Domain.Enums.AgencyStatus status) => status switch
     {
         SECURA.Domain.Enums.AgencyStatus.Active => Color.Success,
         SECURA.Domain.Enums.AgencyStatus.Rejected
             or SECURA.Domain.Enums.AgencyStatus.Terminated => Color.Error,
         SECURA.Domain.Enums.AgencyStatus.Suspended => Color.Warning,
+        _ => Color.Default
+    };
+
+    private static Color GetLicenseColor(LicenseStatus status) => status switch
+    {
+        LicenseStatus.Active    => Color.Success,
+        LicenseStatus.Expired
+            or LicenseStatus.Cancelled => Color.Error,
+        LicenseStatus.Suspended => Color.Warning,
+        _ => Color.Default
+    };
+
+    private static Color GetSubmissionColor(SubmissionStatus status) => status switch
+    {
+        SubmissionStatus.Bound   => Color.Success,
+        SubmissionStatus.Declined => Color.Error,
+        SubmissionStatus.Quoted  => Color.Info,
+        SubmissionStatus.InReview or SubmissionStatus.Referred => Color.Primary,
         _ => Color.Default
     };
 }
