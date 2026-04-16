@@ -1,0 +1,108 @@
+@page "/reports/compliance"
+@attribute [Authorize(Policy = SecuraPolicies.CanViewReports)]
+@rendermode InteractiveServer
+@inject IMediator Mediator
+
+<PageTitle>Compliance Summary — SECURA CRM</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Compliance Summary</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadReport" Class="mb-4">
+    Refresh
+</MudButton>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_report != null)
+{
+    <MudGrid>
+        <!-- KPI cards -->
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="pa-4 text-center">
+                <MudText Typo="Typo.h4">@_report.TotalProducers</MudText>
+                <MudText Typo="Typo.caption">Total Producers</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="pa-4 text-center">
+                <MudText Typo="Typo.h4" Color="Color.Success">@_report.ActiveLicenses</MudText>
+                <MudText Typo="Typo.caption">Active Licenses</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="pa-4 text-center">
+                <MudText Typo="Typo.h4" Color="@(_report.ExpiredLicenses > 0 ? Color.Error : Color.Success)">
+                    @_report.ExpiredLicenses
+                </MudText>
+                <MudText Typo="Typo.caption">Expired Licenses</MudText>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Expiry horizon -->
+        <MudItem xs="12">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-3">License Expiry Horizon</MudText>
+                <MudSimpleTable Dense="true">
+                    <thead>
+                        <tr>
+                            <th>Window</th>
+                            <th>Licenses Expiring</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Next 30 days</td>
+                            <td>@_report.ExpiringIn30Days</td>
+                            <td>
+                                <MudChip T="string" Size="Size.Small"
+                                         Color="@(_report.ExpiringIn30Days > 0 ? Color.Error : Color.Success)">
+                                    @(_report.ExpiringIn30Days > 0 ? "Action Required" : "Clear")
+                                </MudChip>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Next 60 days</td>
+                            <td>@_report.ExpiringIn60Days</td>
+                            <td>
+                                <MudChip T="string" Size="Size.Small"
+                                         Color="@(_report.ExpiringIn60Days > 0 ? Color.Warning : Color.Success)">
+                                    @(_report.ExpiringIn60Days > 0 ? "Renew Soon" : "Clear")
+                                </MudChip>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Next 90 days</td>
+                            <td>@_report.ExpiringIn90Days</td>
+                            <td>
+                                <MudChip T="string" Size="Size.Small"
+                                         Color="@(_report.ExpiringIn90Days > 0 ? Color.Info : Color.Success)">
+                                    @(_report.ExpiringIn90Days > 0 ? "Monitor" : "Clear")
+                                </MudChip>
+                            </td>
+                        </tr>
+                    </tbody>
+                </MudSimpleTable>
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-3">
+                    Generated @_report.GeneratedAt.ToString("yyyy-MM-dd HH:mm") UTC
+                </MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private ComplianceSummaryDto? _report;
+    private bool _loading;
+
+    protected override async Task OnInitializedAsync() => await LoadReport();
+
+    private async Task LoadReport()
+    {
+        _loading = true;
+        try { _report = await Mediator.Send(new GetComplianceSummaryQuery()); }
+        finally { _loading = false; }
+    }
+}

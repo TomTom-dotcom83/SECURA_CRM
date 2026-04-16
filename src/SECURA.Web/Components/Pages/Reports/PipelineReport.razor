@@ -1,0 +1,95 @@
+@page "/reports/pipeline"
+@attribute [Authorize(Policy = SecuraPolicies.CanViewReports)]
+@rendermode InteractiveServer
+@inject IMediator Mediator
+
+<PageTitle>Pipeline Report — SECURA CRM</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Pipeline Report</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadReport" Class="mb-4">
+    Refresh
+</MudButton>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_report != null)
+{
+    <MudGrid>
+        <!-- Funnel counts -->
+        <MudItem xs="12">
+            <MudPaper Class="pa-4 mb-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-3">Submission Funnel</MudText>
+                <MudGrid>
+                    @foreach (var (label, count, color) in Stages())
+                    {
+                        <MudItem xs="6" sm="4" md="3" lg="2">
+                            <MudPaper Class="pa-3 text-center" Elevation="1">
+                                <MudText Typo="Typo.h4" Color="color">@count</MudText>
+                                <MudText Typo="Typo.caption">@label</MudText>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <!-- SLA -->
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-3">SLA Adherence</MudText>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                    <MudProgressCircular Value="(double)_report.SlaAdherencePercent"
+                                        Color="@(_report.SlaAdherencePercent >= 80 ? Color.Success : Color.Warning)"
+                                        Size="Size.Large" />
+                    <div>
+                        <MudText Typo="Typo.h5">@_report.SlaAdherencePercent.ToString("F1")%</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">on-time submissions</MudText>
+                    </div>
+                </MudStack>
+                @if (_report.OverdueCount > 0)
+                {
+                    <MudAlert Severity="Severity.Warning" Class="mt-3">
+                        @_report.OverdueCount overdue submission@(_report.OverdueCount == 1 ? "" : "s") require attention.
+                    </MudAlert>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">
+                    Report generated @_report.GeneratedAt.ToString("yyyy-MM-dd HH:mm") UTC
+                </MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private PipelineReportDto? _report;
+    private bool _loading;
+
+    protected override async Task OnInitializedAsync() => await LoadReport();
+
+    private async Task LoadReport()
+    {
+        _loading = true;
+        try { _report = await Mediator.Send(new GetPipelineReportQuery()); }
+        finally { _loading = false; }
+    }
+
+    private IEnumerable<(string Label, int Count, Color Color)> Stages() =>
+    [
+        ("New",       _report!.NewCount,       Color.Default),
+        ("Triaged",   _report.TriagedCount,    Color.Info),
+        ("In Review", _report.InReviewCount,   Color.Primary),
+        ("Referred",  _report.ReferredCount,   Color.Warning),
+        ("Quoted",    _report.QuotedCount,     Color.Secondary),
+        ("Bound",     _report.BoundCount,      Color.Success),
+        ("Declined",  _report.DeclinedCount,   Color.Error),
+        ("Overdue",   _report.OverdueCount,    Color.Error),
+    ];
+}
