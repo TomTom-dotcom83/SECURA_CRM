@@ -18,4 +18,12 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
   </ItemGroup>
+
+  <!-- System.Security.Cryptography.Xml pulled transitively via Microsoft.Identity.Web has known
+       advisories that are not yet patched in the 9.x package series. Suppress at the audit level;
+       XML signing is not used by any test code path. -->
+  <ItemGroup>
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-37gx-xxp4-5rgx" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-w3x6-4m5h-cxqf" />
+  </ItemGroup>
 </Project>
