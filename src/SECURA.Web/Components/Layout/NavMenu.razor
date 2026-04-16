@@ -23,7 +23,7 @@
 
     <AuthorizeView Policy="@SecuraPolicies.CanViewCompliance">
         <MudNavGroup Title="Compliance" Icon="@Icons.Material.Filled.VerifiedUser">
-            <MudNavLink Href="/compliance" Icon="@Icons.Material.Filled.Shield">
+            <MudNavLink Href="/admin/compliance" Icon="@Icons.Material.Filled.Shield">
                 Compliance Dashboard
             </MudNavLink>
         </MudNavGroup>
@@ -43,7 +43,7 @@
 
     <AuthorizeView Policy="@SecuraPolicies.CanViewReports">
         <MudNavGroup Title="Analytics" Icon="@Icons.Material.Filled.BarChart">
-            <MudNavLink Href="/reports/scorecard" Icon="@Icons.Material.Filled.Assessment">
+            <MudNavLink Href="/reports/agency-scorecard" Icon="@Icons.Material.Filled.Assessment">
                 Agency Scorecard
             </MudNavLink>
             <MudNavLink Href="/reports/pipeline" Icon="@Icons.Material.Filled.ShowChart">

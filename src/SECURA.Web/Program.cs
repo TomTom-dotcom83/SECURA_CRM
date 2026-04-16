@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Identity.Web;
 using MudBlazor.Services;
@@ -38,9 +39,19 @@ try
     // ── HttpContextAccessor (needed for CurrentUserService) ────────────────
     builder.Services.AddHttpContextAccessor();
 
-    // ── Authentication: Entra ID / Azure AD ────────────────────────────────
-    builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
-        .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
+    // ── Authentication ─────────────────────────────────────────────────────
+    if (builder.Environment.IsDevelopment())
+    {
+        // Dev mode: auto-authenticate as CarrierAdmin; no Entra ID required.
+        builder.Services.AddAuthentication(DevAuthHandler.SchemeName)
+            .AddScheme<AuthenticationSchemeOptions, DevAuthHandler>(
+                DevAuthHandler.SchemeName, _ => { });
+    }
+    else
+    {
+        builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
+            .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
+    }
 
     // ── Authorization: policy-based RBAC ───────────────────────────────────
     builder.Services.AddAuthorization(SecuraPolicies.ConfigurePolicies);
@@ -81,6 +92,7 @@ try
 
     // ── Blazor ─────────────────────────────────────────────────────────────
     builder.Services.AddRazorComponents()
+        .AddInteractiveServerComponents()
         .AddInteractiveWebAssemblyComponents();
 
     builder.Services.AddMudServices();
@@ -97,7 +109,8 @@ try
         app.UseHsts();
     }
 
-    app.UseHttpsRedirection();
+    if (!app.Environment.IsDevelopment())
+        app.UseHttpsRedirection();
     app.UseMiddleware<RequestContextMiddleware>();
     app.UseSerilogRequestLogging();
     app.UseStaticFiles();
@@ -114,6 +127,7 @@ try
 
     // ── Blazor ─────────────────────────────────────────────────────────────
     app.MapRazorComponents<App>()
+        .AddInteractiveServerRenderMode()
         .AddInteractiveWebAssemblyRenderMode()
         .AddAdditionalAssemblies(typeof(SECURA.Web.Client._Imports).Assembly);
 

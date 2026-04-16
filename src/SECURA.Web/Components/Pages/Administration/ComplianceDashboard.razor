@@ -78,14 +78,10 @@ else
         _loading = true;
         try
         {
-            var tasks = await Task.WhenAll(
-                Mediator.Send(new GetExpiringLicensesQuery(30)),
-                Mediator.Send(new GetExpiringLicensesQuery(60)),
-                Mediator.Send(new GetExpiringLicensesQuery(90)));
-
-            _expiring30 = tasks[0];
-            _expiring60 = tasks[1];
-            _expiring90 = tasks[2];
+            // Sequential: EF Core scoped DbContext cannot handle concurrent queries.
+            _expiring30 = await Mediator.Send(new GetExpiringLicensesQuery(30));
+            _expiring60 = await Mediator.Send(new GetExpiringLicensesQuery(60));
+            _expiring90 = await Mediator.Send(new GetExpiringLicensesQuery(90));
         }
         finally { _loading = false; }
     }

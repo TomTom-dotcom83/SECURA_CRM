@@ -80,7 +80,9 @@ public sealed class SubmissionRepository : Repository<Submission, Guid>, ISubmis
     public async Task<(int Total, int OnTime)> GetSlaStatsAsync(
         CancellationToken cancellationToken = default)
     {
-        var openStatuses = new[]
+        // Use List<T> so EF Core translates Contains to SQL IN (...) rather than
+        // attempting the ReadOnlySpan overload that .NET 10 resolves on T[].
+        var openStatuses = new List<SubmissionStatus>
         {
             SubmissionStatus.New, SubmissionStatus.Triaged,
             SubmissionStatus.InReview, SubmissionStatus.Referred,
