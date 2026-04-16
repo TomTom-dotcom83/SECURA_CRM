@@ -96,20 +96,17 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var agenciesTask    = Mediator.Send(new GetAgenciesQuery(1, 1, Status: AgencyStatus.Active));
-        var producersTask   = Mediator.Send(new GetProducersQuery(1, 1, ActiveOnly: true));
-        var pipelineTask    = Mediator.Send(new GetPipelineReportQuery());
-        var complianceTask  = Mediator.Send(new GetComplianceSummaryQuery());
+        var agencies   = await Mediator.Send(new GetAgenciesQuery(1, 1, Status: AgencyStatus.Active));
+        var producers  = await Mediator.Send(new GetProducersQuery(1, 1, ActiveOnly: true));
+        _pipeline      = await Mediator.Send(new GetPipelineReportQuery());
+        var compliance = await Mediator.Send(new GetComplianceSummaryQuery());
 
-        await Task.WhenAll(agenciesTask, producersTask, pipelineTask, complianceTask);
-
-        _activeAgencies   = agenciesTask.Result.TotalCount;
-        _activeProducers  = producersTask.Result.TotalCount;
-        _pipeline         = pipelineTask.Result;
+        _activeAgencies   = agencies.TotalCount;
+        _activeProducers  = producers.TotalCount;
         _openSubmissions  = _pipeline.NewCount + _pipeline.TriagedCount
                           + _pipeline.InReviewCount + _pipeline.ReferredCount
                           + _pipeline.QuotedCount;
-        _complianceAlerts = complianceTask.Result.ExpiringIn30Days;
+        _complianceAlerts = compliance.ExpiringIn30Days;
 
         _loading = false;
     }
