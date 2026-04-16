@@ -1,43 +1,126 @@
 @page "/"
 @attribute [Authorize(Policy = SecuraPolicies.ReadOnly)]
 @rendermode InteractiveServer
+@inject IMediator Mediator
+@using SECURA.Application.Agencies.Queries
+@using SECURA.Application.Producers.Queries
+@using SECURA.Application.Reports.DTOs
+@using SECURA.Application.Reports.Queries
+@using SECURA.Domain.Enums
+@using MediatR
 
 <PageTitle>Dashboard — SECURA CRM</PageTitle>
 
 <MudText Typo="Typo.h5" Class="mb-4">Distribution Dashboard</MudText>
 
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Class="mb-4" />
+}
+
+<!-- ── KPI Cards ─────────────────────────────────────────────────────────── -->
 <MudGrid>
     <MudItem xs="12" sm="6" md="3">
         <MudPaper Class="pa-4 d-flex flex-column align-center">
             <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Large" Color="Color.Primary" />
-            <MudText Typo="Typo.h4">—</MudText>
+            <MudText Typo="Typo.h4">@(_activeAgencies?.ToString() ?? "—")</MudText>
             <MudText Typo="Typo.subtitle2">Active Agencies</MudText>
         </MudPaper>
     </MudItem>
     <MudItem xs="12" sm="6" md="3">
         <MudPaper Class="pa-4 d-flex flex-column align-center">
             <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Large" Color="Color.Secondary" />
-            <MudText Typo="Typo.h4">—</MudText>
+            <MudText Typo="Typo.h4">@(_activeProducers?.ToString() ?? "—")</MudText>
             <MudText Typo="Typo.subtitle2">Active Producers</MudText>
         </MudPaper>
     </MudItem>
     <MudItem xs="12" sm="6" md="3">
         <MudPaper Class="pa-4 d-flex flex-column align-center">
             <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Large" Color="Color.Info" />
-            <MudText Typo="Typo.h4">—</MudText>
+            <MudText Typo="Typo.h4">@(_openSubmissions?.ToString() ?? "—")</MudText>
             <MudText Typo="Typo.subtitle2">Open Submissions</MudText>
         </MudPaper>
     </MudItem>
     <MudItem xs="12" sm="6" md="3">
         <MudPaper Class="pa-4 d-flex flex-column align-center">
-            <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Large" Color="Color.Error" />
-            <MudText Typo="Typo.h4">—</MudText>
-            <MudText Typo="Typo.subtitle2">Compliance Alerts</MudText>
+            <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Large"
+                     Color="@(_complianceAlerts > 0 ? Color.Error : Color.Success)" />
+            <MudText Typo="Typo.h4"
+                     Style="@(_complianceAlerts > 0 ? "color: var(--mud-palette-error)" : "")">
+                @(_complianceAlerts?.ToString() ?? "—")
+            </MudText>
+            <MudText Typo="Typo.subtitle2">Licenses Expiring (30d)</MudText>
         </MudPaper>
     </MudItem>
 </MudGrid>
 
-<MudAlert Severity="Severity.Info" Class="mt-4">
-    Live KPI data will be wired in Milestone 6. Navigate to <strong>Agencies</strong> or
-    <strong>Submissions</strong> to see working data.
-</MudAlert>
+@if (_pipeline != null)
+{
+    <!-- ── Pipeline Breakdown ───────────────────────────────────────────────── -->
+    <MudText Typo="Typo.h6" Class="mt-6 mb-3">Submission Pipeline</MudText>
+    <MudGrid>
+        @foreach (var (label, count, color) in PipelineItems())
+        {
+            <MudItem xs="6" sm="4" md="2">
+                <MudPaper Class="pa-3 d-flex flex-column align-center" Elevation="1">
+                    <MudChip T="string" Color="@color" Size="Size.Small">@label</MudChip>
+                    <MudText Typo="Typo.h5" Class="mt-1">@count</MudText>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+
+    <!-- SLA strip -->
+    <MudPaper Class="pa-3 mt-3 d-flex align-center gap-4">
+        <MudText Typo="Typo.body2"><b>SLA Adherence:</b></MudText>
+        <MudProgressLinear Value="@((double)_pipeline.SlaAdherencePercent)"
+                           Color="@(_pipeline.SlaAdherencePercent >= 80 ? Color.Success : Color.Warning)"
+                           Rounded="true" Size="Size.Medium" Class="flex-1" />
+        <MudText Typo="Typo.body2">@_pipeline.SlaAdherencePercent.ToString("F1")%</MudText>
+        @if (_pipeline.OverdueCount > 0)
+        {
+            <MudChip T="string" Color="Color.Error" Size="Size.Small" Icon="@Icons.Material.Filled.AccessAlarm">
+                @_pipeline.OverdueCount overdue
+            </MudChip>
+        }
+    </MudPaper>
+}
+
+@code {
+    private int? _activeAgencies;
+    private int? _activeProducers;
+    private int? _openSubmissions;
+    private int? _complianceAlerts;
+    private PipelineReportDto? _pipeline;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var agenciesTask    = Mediator.Send(new GetAgenciesQuery(1, 1, Status: AgencyStatus.Active));
+        var producersTask   = Mediator.Send(new GetProducersQuery(1, 1, ActiveOnly: true));
+        var pipelineTask    = Mediator.Send(new GetPipelineReportQuery());
+        var complianceTask  = Mediator.Send(new GetComplianceSummaryQuery());
+
+        await Task.WhenAll(agenciesTask, producersTask, pipelineTask, complianceTask);
+
+        _activeAgencies   = agenciesTask.Result.TotalCount;
+        _activeProducers  = producersTask.Result.TotalCount;
+        _pipeline         = pipelineTask.Result;
+        _openSubmissions  = _pipeline.NewCount + _pipeline.TriagedCount
+                          + _pipeline.InReviewCount + _pipeline.ReferredCount
+                          + _pipeline.QuotedCount;
+        _complianceAlerts = complianceTask.Result.ExpiringIn30Days;
+
+        _loading = false;
+    }
+
+    private IEnumerable<(string Label, int Count, Color Color)> PipelineItems() =>
+    [
+        ("New",       _pipeline!.NewCount,      Color.Default),
+        ("Triaged",   _pipeline.TriagedCount,   Color.Default),
+        ("In Review", _pipeline.InReviewCount,  Color.Primary),
+        ("Referred",  _pipeline.ReferredCount,  Color.Primary),
+        ("Quoted",    _pipeline.QuotedCount,    Color.Info),
+        ("Bound",     _pipeline.BoundCount,     Color.Success),
+    ];
+}
