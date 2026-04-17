@@ -1,0 +1,121 @@
+@page "/producers"
+@attribute [Authorize(Policy = SecuraPolicies.ReadOnly)]
+@rendermode InteractiveServer
+@inject IMediator Mediator
+
+@using Secura.DistributionCrm.Agencies.Application.Producers
+
+<PageTitle>Producers — SECURA CRM</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Producers</MudText>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudGrid>
+        <MudItem xs="12" md="4">
+            <MudTextField @bind-Value="_search" Label="Search name or NPN"
+                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" />
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudSelect T="LicenseStatus?" Label="License Status" @bind-Value="_filterStatus" Clearable="true">
+                @foreach (var s in Enum.GetValues<LicenseStatus>())
+                {
+                    <MudSelectItem Value="(LicenseStatus?)s">@s</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudSelect T="bool?" Label="Active" @bind-Value="_filterActive" Clearable="true">
+                <MudSelectItem Value="(bool?)true">Active</MudSelectItem>
+                <MudSelectItem Value="(bool?)false">Inactive</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="2" Class="d-flex align-end gap-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadData">Search</MudButton>
+            <MudButton Variant="Variant.Text" OnClick="ClearFilters">Clear</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_result != null)
+{
+    <MudDataGrid T="ProducerSummaryDto" Items="_result.Items" Hover="true" Dense="true"
+                 SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.Npn" Title="NPN" />
+            <PropertyColumn Property="x => x.FullName" Title="Name" />
+            <TemplateColumn Title="License Status">
+                <CellTemplate>
+                    <MudChip T="string" Color="@GetLicenseColor(context.Item.LicenseStatus)" Size="Size.Small">
+                        @context.Item.LicenseStatus
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.ActiveLicenseCount" Title="Active Licenses" />
+            <TemplateColumn Title="Active">
+                <CellTemplate>
+                    @if (context.Item.ActiveFlag)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" />
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+
+    <MudPagination Class="mt-3" Count="_result.TotalPages" Selected="_page"
+                   SelectedChanged="PageChanged" />
+}
+
+@code {
+    private PagedResult<ProducerSummaryDto>? _result;
+    private bool _loading;
+    private int _page = 1;
+    private string? _search;
+    private LicenseStatus? _filterStatus;
+    private bool? _filterActive;
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        try
+        {
+            _result = await Mediator.Send(new GetProducersQuery(
+                _page, 25,
+                LicenseStatus: _filterStatus,
+                ActiveOnly: _filterActive,
+                SearchTerm: _search));
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task PageChanged(int page)
+    {
+        _page = page;
+        await LoadData();
+    }
+
+    private void ClearFilters()
+    {
+        _search = null;
+        _filterStatus = null;
+        _filterActive = null;
+    }
+
+    private static Color GetLicenseColor(LicenseStatus status) => status switch
+    {
+        LicenseStatus.Active => Color.Success,
+        LicenseStatus.Expired or LicenseStatus.Cancelled => Color.Error,
+        LicenseStatus.Suspended => Color.Warning,
+        _ => Color.Default
+    };
+}

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Secura.DistributionCrm.Claims.Contracts</AssemblyName>
+    <RootNamespace>Secura.DistributionCrm.Claims.Contracts</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.Contracts\BuildingBlocks.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Secura.DistributionCrm.SharedKernel\Secura.DistributionCrm.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>

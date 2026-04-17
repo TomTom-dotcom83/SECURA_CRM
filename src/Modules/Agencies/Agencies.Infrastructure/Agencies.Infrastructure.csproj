@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Secura.DistributionCrm.Agencies.Infrastructure</AssemblyName>
+    <RootNamespace>Secura.DistributionCrm.Agencies.Infrastructure</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Agencies.Domain\Agencies.Domain.csproj" />
+    <ProjectReference Include="..\Agencies.Application\Agencies.Application.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.Infrastructure\BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Secura.DistributionCrm.SharedKernel\Secura.DistributionCrm.SharedKernel.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="Polly" />
+  </ItemGroup>
+</Project>

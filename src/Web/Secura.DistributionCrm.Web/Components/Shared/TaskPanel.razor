@@ -1,0 +1,70 @@
+@inject IMediator Mediator
+@using Secura.DistributionCrm.Relationships.Application.Interactions
+@using Secura.DistributionCrm.Relationships.Application.Interactions
+@using MediatR
+
+<MudPaper Class="pa-4" Elevation="0" Outlined="true">
+    <MudText Typo="Typo.subtitle1" Class="mb-3">
+        <MudIcon Icon="@Icons.Material.Filled.Task" Size="Size.Small" Class="mr-1" />
+        Tasks &amp; Follow-ups
+    </MudText>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else if (_tasks.Count == 0)
+    {
+        <MudText Typo="Typo.body2" Color="Color.Secondary">No open tasks.</MudText>
+    }
+    else
+    {
+        <MudList T="InteractionDto" Dense="true">
+            @foreach (var task in _tasks)
+            {
+                <MudListItem>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@(task.IsCompleted
+                            ? Icons.Material.Filled.CheckCircle
+                            : Icons.Material.Outlined.RadioButtonUnchecked)"
+                                 Color="@(task.IsCompleted ? Color.Success : Color.Default)"
+                                 Size="Size.Small" />
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.body2">@task.Summary</MudText>
+                            @if (task.DueDate.HasValue)
+                            {
+                                <MudText Typo="Typo.caption"
+                                         Color="@(task.DueDate < DateTime.UtcNow ? Color.Error : Color.Secondary)">
+                                    Due @task.DueDate.Value.ToString("MM/dd/yyyy")
+                                </MudText>
+                            }
+                        </MudStack>
+                    </MudStack>
+                </MudListItem>
+            }
+        </MudList>
+    }
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired] public string EntityType { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public Guid EntityId { get; set; }
+
+    private IReadOnlyList<InteractionDto> _tasks = [];
+    private bool _loading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (EntityId == Guid.Empty) return;
+
+        _loading = true;
+        try
+        {
+            var all = await Mediator.Send(
+                new GetInteractionTimelineQuery(EntityType, EntityId, 100));
+            _tasks = all.Where(i =>
+                i.InteractionType == Secura.DistributionCrm.SharedKernel.Enums.InteractionType.Task).ToList();
+        }
+        finally { _loading = false; }
+    }
+}

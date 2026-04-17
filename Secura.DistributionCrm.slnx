@@ -1,0 +1,73 @@
+<Solution>
+  <Folder Name="/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Domain/BuildingBlocks.Domain.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Application/BuildingBlocks.Application.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Infrastructure/BuildingBlocks.Infrastructure.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Contracts/BuildingBlocks.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/Shared/">
+    <Project Path="src/Shared/Secura.DistributionCrm.SharedKernel/Secura.DistributionCrm.SharedKernel.csproj" />
+    <Project Path="src/Shared/Secura.DistributionCrm.Contracts/Secura.DistributionCrm.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/Modules/Agencies/">
+    <Project Path="src/Modules/Agencies/Agencies.Domain/Agencies.Domain.csproj" />
+    <Project Path="src/Modules/Agencies/Agencies.Application/Agencies.Application.csproj" />
+    <Project Path="src/Modules/Agencies/Agencies.Infrastructure/Agencies.Infrastructure.csproj" />
+    <Project Path="src/Modules/Agencies/Agencies.Contracts/Agencies.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/Modules/Relationships/">
+    <Project Path="src/Modules/Relationships/Relationships.Domain/Relationships.Domain.csproj" />
+    <Project Path="src/Modules/Relationships/Relationships.Application/Relationships.Application.csproj" />
+    <Project Path="src/Modules/Relationships/Relationships.Infrastructure/Relationships.Infrastructure.csproj" />
+    <Project Path="src/Modules/Relationships/Relationships.Contracts/Relationships.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/Modules/Submissions/">
+    <Project Path="src/Modules/Submissions/Submissions.Domain/Submissions.Domain.csproj" />
+    <Project Path="src/Modules/Submissions/Submissions.Application/Submissions.Application.csproj" />
+    <Project Path="src/Modules/Submissions/Submissions.Infrastructure/Submissions.Infrastructure.csproj" />
+    <Project Path="src/Modules/Submissions/Submissions.Contracts/Submissions.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/Modules/Claims/">
+    <Project Path="src/Modules/Claims/Claims.Domain/Claims.Domain.csproj" />
+    <Project Path="src/Modules/Claims/Claims.Application/Claims.Application.csproj" />
+    <Project Path="src/Modules/Claims/Claims.Infrastructure/Claims.Infrastructure.csproj" />
+    <Project Path="src/Modules/Claims/Claims.Contracts/Claims.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/Modules/Documents/">
+    <Project Path="src/Modules/Documents/Documents.Domain/Documents.Domain.csproj" />
+    <Project Path="src/Modules/Documents/Documents.Application/Documents.Application.csproj" />
+    <Project Path="src/Modules/Documents/Documents.Infrastructure/Documents.Infrastructure.csproj" />
+    <Project Path="src/Modules/Documents/Documents.Contracts/Documents.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/Modules/Reporting/">
+    <Project Path="src/Modules/Reporting/Reporting.Domain/Reporting.Domain.csproj" />
+    <Project Path="src/Modules/Reporting/Reporting.Application/Reporting.Application.csproj" />
+    <Project Path="src/Modules/Reporting/Reporting.Infrastructure/Reporting.Infrastructure.csproj" />
+    <Project Path="src/Modules/Reporting/Reporting.Contracts/Reporting.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/Modules/Administration/">
+    <Project Path="src/Modules/Administration/Administration.Domain/Administration.Domain.csproj" />
+    <Project Path="src/Modules/Administration/Administration.Application/Administration.Application.csproj" />
+    <Project Path="src/Modules/Administration/Administration.Infrastructure/Administration.Infrastructure.csproj" />
+    <Project Path="src/Modules/Administration/Administration.Contracts/Administration.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/Host/">
+    <Project Path="src/Host/Secura.DistributionCrm.Host/Secura.DistributionCrm.Host.csproj" />
+  </Folder>
+  <Folder Name="/Api/">
+    <Project Path="src/Api/Secura.DistributionCrm.Api/Secura.DistributionCrm.Api.csproj" />
+  </Folder>
+  <Folder Name="/Web/">
+    <Project Path="src/Web/Secura.DistributionCrm.Web/Secura.DistributionCrm.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/Unit/">
+    <Project Path="tests/Unit/Agencies.UnitTests/Agencies.UnitTests.csproj" />
+    <Project Path="tests/Unit/Submissions.UnitTests/Submissions.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Integration/">
+    <Project Path="tests/Integration/Api.IntegrationTests/Api.IntegrationTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/E2E/">
+    <Project Path="tests/E2E/Workflows.E2ETests/Workflows.E2ETests.csproj" />
+  </Folder>
+</Solution>

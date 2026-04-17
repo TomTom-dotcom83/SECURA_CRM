@@ -1,0 +1,97 @@
+@page "/documents"
+@attribute [Authorize(Policy = SecuraPolicies.ReadOnly)]
+@rendermode InteractiveServer
+@inject IMediator Mediator
+@using Secura.DistributionCrm.Documents.Application.DTOs
+@using Secura.DistributionCrm.Documents.Application.Queries
+@using MediatR
+
+<PageTitle>Documents — SECURA CRM</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Documents Library</MudText>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudGrid>
+        <MudItem xs="12" md="4">
+            <MudSelect @bind-Value="_entityType" Label="Entity Type" T="string">
+                <MudSelectItem Value="@("Agency")">Agency</MudSelectItem>
+                <MudSelectItem Value="@("Producer")">Producer</MudSelectItem>
+                <MudSelectItem Value="@("Submission")">Submission</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="5">
+            <MudTextField @bind-Value="_entityIdText" Label="Entity ID (GUID)" />
+        </MudItem>
+        <MudItem xs="12" md="3" Class="d-flex align-end">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadData">
+                Search
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_documents.Count > 0)
+{
+    <MudDataGrid T="DocumentMetadataDto" Items="_documents" Hover="true" Dense="true">
+        <Columns>
+            <PropertyColumn Property="x => x.DocumentType" Title="Type" />
+            <PropertyColumn Property="x => x.FileName" Title="File Name" />
+            <PropertyColumn Property="x => x.UploadedAt" Title="Uploaded" Format="MM/dd/yyyy" />
+            <PropertyColumn Property="x => x.UploadedByUserId" Title="Uploaded By" />
+            <TemplateColumn Title="Size">
+                <CellTemplate>
+                    @if (context.Item.FileSizeBytes.HasValue)
+                    {
+                        <MudText Typo="Typo.caption">
+                            @(context.Item.FileSizeBytes.Value / 1024)KB
+                        </MudText>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">—</MudText>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Active">
+                <CellTemplate>
+                    <MudIcon Icon="@(context.Item.IsActive
+                        ? Icons.Material.Filled.CheckCircle
+                        : Icons.Material.Filled.Cancel)"
+                             Color="@(context.Item.IsActive ? Color.Success : Color.Error)"
+                             Size="Size.Small" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+}
+else if (_searched)
+{
+    <MudAlert Severity="Severity.Info">No documents found for the specified entity.</MudAlert>
+}
+
+@code {
+    private IReadOnlyList<DocumentMetadataDto> _documents = [];
+    private bool _loading;
+    private bool _searched;
+    private string? _entityType = "Agency";
+    private string? _entityIdText;
+
+    private async Task LoadData()
+    {
+        if (!Guid.TryParse(_entityIdText, out var entityId) ||
+            string.IsNullOrWhiteSpace(_entityType))
+            return;
+
+        _loading = true;
+        _searched = true;
+        try
+        {
+            _documents = await Mediator.Send(new GetDocumentsQuery(_entityType, entityId));
+        }
+        finally { _loading = false; }
+    }
+}

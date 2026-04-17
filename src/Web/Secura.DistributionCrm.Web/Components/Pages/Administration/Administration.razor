@@ -1,0 +1,46 @@
+@page "/admin"
+@attribute [Authorize(Policy = SecuraPolicies.CanAdminister)]
+@rendermode InteractiveServer
+
+<PageTitle>Administration — SECURA CRM</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Administration</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="4">
+        <MudCard>
+            <MudCardContent>
+                <MudIcon Icon="@Icons.Material.Filled.Checklist" Color="Color.Primary" />
+                <MudText Typo="Typo.h6">Onboarding Checklists</MudText>
+                <MudText Typo="Typo.body2">Configure onboarding steps by agency tier.</MudText>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Href="/admin/checklists" Variant="Variant.Text">Manage</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudCard>
+            <MudCardContent>
+                <MudIcon Icon="@Icons.Material.Filled.Label" Color="Color.Secondary" />
+                <MudText Typo="Typo.h6">Appetite Tags</MudText>
+                <MudText Typo="Typo.body2">Manage submission appetite tags by LOB and state.</MudText>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Href="/admin/appetite-tags" Variant="Variant.Text">Manage</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudCard>
+            <MudCardContent>
+                <MudIcon Icon="@Icons.Material.Filled.Webhook" Color="Color.Info" />
+                <MudText Typo="Typo.h6">Webhook Configuration</MudText>
+                <MudText Typo="Typo.body2">Configure outbound webhook endpoints.</MudText>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Href="/admin/webhooks" Variant="Variant.Text">Manage</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+</MudGrid>

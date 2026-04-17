@@ -1,0 +1,101 @@
+@page "/agencies/new"
+@attribute [Authorize(Policy = SecuraPolicies.CanManageAgencies)]
+@rendermode InteractiveServer
+@inject IMediator Mediator
+@inject NavigationManager Nav
+
+<PageTitle>New Agency — SECURA CRM</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">New Agency</MudText>
+
+<MudPaper Class="pa-6" MaxWidth="700px">
+    <MudForm @ref="_form" @bind-IsValid="_isValid">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_name" Label="Agency Name" Required="true"
+                              RequiredError="Agency name is required."
+                              MaxLength="200" Counter="200" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudSelect T="AgencyTier" @bind-Value="_tier" Label="Tier" Required="true">
+                    @foreach (var t in Enum.GetValues<AgencyTier>())
+                    {
+                        <MudSelectItem Value="t">@t</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="_primaryState" Label="Primary State" Required="true"
+                              RequiredError="State is required." MaxLength="2"
+                              HelperText="2-letter abbreviation, e.g. TX" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="_phone" Label="Phone" MaxLength="20" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="_email" Label="Email" InputType="InputType.Email"
+                              MaxLength="200" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_website" Label="Website" MaxLength="200" />
+            </MudItem>
+        </MudGrid>
+
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-4">@_error</MudAlert>
+        }
+
+        <div class="d-flex gap-3 mt-6">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       OnClick="Submit" Disabled="_saving">
+                @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                Create Agency
+            </MudButton>
+            <MudButton Variant="Variant.Text" Href="/agencies">Cancel</MudButton>
+        </div>
+    </MudForm>
+</MudPaper>
+
+@code {
+    private MudForm _form = null!;
+    private bool _isValid;
+    private bool _saving;
+    private string? _error;
+
+    private string _name = string.Empty;
+    private AgencyTier _tier = AgencyTier.Standard;
+    private string _primaryState = string.Empty;
+    private string? _phone;
+    private string? _email;
+    private string? _website;
+
+    private async Task Submit()
+    {
+        await _form.Validate();
+        if (!_isValid) return;
+
+        _saving = true;
+        _error  = null;
+        try
+        {
+            var id = await Mediator.Send(new CreateAgencyCommand(
+                _name.Trim(),
+                _tier,
+                _primaryState.Trim().ToUpperInvariant(),
+                string.IsNullOrWhiteSpace(_phone)   ? null : _phone.Trim(),
+                string.IsNullOrWhiteSpace(_email)   ? null : _email.Trim(),
+                string.IsNullOrWhiteSpace(_website) ? null : _website.Trim()));
+
+            Nav.NavigateTo($"/agencies/{id}");
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

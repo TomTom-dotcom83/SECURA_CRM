@@ -1,0 +1,106 @@
+@page "/reports/agency-scorecard"
+@attribute [Authorize(Policy = SecuraPolicies.CanViewReports)]
+@rendermode InteractiveServer
+@inject IMediator Mediator
+@using Secura.DistributionCrm.Reporting.Application.DTOs
+@using Secura.DistributionCrm.Reporting.Application.Queries
+@using MediatR
+
+<PageTitle>Agency Scorecard — SECURA CRM</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Agency Scorecard</MudText>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudGrid AlignItems="Center">
+        <MudItem xs="12" md="8">
+            <MudTextField @bind-Value="_agencyIdText" Label="Agency ID (GUID)" FullWidth="false" />
+        </MudItem>
+        <MudItem xs="12" md="4" Class="d-flex align-end">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadReport">
+                Generate Scorecard
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_scorecard != null)
+{
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4 mb-4">
+                <MudText Typo="Typo.h6">@_scorecard.AgencyName</MudText>
+                <MudChip T="string" Size="Size.Small">@_scorecard.Tier</MudChip>
+            </MudPaper>
+
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-3">Submission Performance</MudText>
+                <MudList T="string" Dense="true">
+                    <MudListItem>
+                        <MudText><b>Total Submissions:</b> @_scorecard.TotalSubmissions</MudText>
+                    </MudListItem>
+                    <MudListItem>
+                        <MudText><b>Bound:</b> @_scorecard.BoundSubmissions</MudText>
+                    </MudListItem>
+                    <MudListItem>
+                        <MudText><b>Declined:</b> @_scorecard.DeclinedSubmissions</MudText>
+                    </MudListItem>
+                    <MudListItem>
+                        <MudText>
+                            <b>Hit Ratio:</b>
+                            <MudChip T="string" Size="Size.Small"
+                                     Color="@(_scorecard.HitRatio >= 50 ? Color.Success : Color.Warning)">
+                                @_scorecard.HitRatio.ToString("F1")%
+                            </MudChip>
+                        </MudText>
+                    </MudListItem>
+                </MudList>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4 mb-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-3">Distribution Capacity</MudText>
+                <MudList T="string" Dense="true">
+                    <MudListItem>
+                        <MudText><b>Active Producers:</b> @_scorecard.ActiveProducers</MudText>
+                    </MudListItem>
+                    <MudListItem>
+                        <MudText>
+                            <b>Expiring Licenses (30d):</b>
+                            <MudChip T="string" Size="Size.Small"
+                                     Color="@(_scorecard.ExpiringLicenses > 0 ? Color.Warning : Color.Success)">
+                                @_scorecard.ExpiringLicenses
+                            </MudChip>
+                        </MudText>
+                    </MudListItem>
+                </MudList>
+            </MudPaper>
+
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">
+                    Report generated @_scorecard.GeneratedAt.ToString("yyyy-MM-dd HH:mm") UTC
+                </MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private AgencyScorecardDto? _scorecard;
+    private bool _loading;
+    private string? _agencyIdText;
+
+    private async Task LoadReport()
+    {
+        if (!Guid.TryParse(_agencyIdText, out var agencyId))
+            return;
+
+        _loading = true;
+        try { _scorecard = await Mediator.Send(new GetAgencyScorecardQuery(agencyId)); }
+        finally { _loading = false; }
+    }
+}

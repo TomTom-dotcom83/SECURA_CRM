@@ -1,0 +1,72 @@
+@rendermode InteractiveServer
+@using Secura.DistributionCrm.Web.Auth
+@using Microsoft.AspNetCore.Authorization
+
+<MudNavMenu>
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
+        Dashboard
+    </MudNavLink>
+
+    <MudNavGroup Title="Distribution" Icon="@Icons.Material.Filled.Business" Expanded="true">
+        <MudNavLink Href="/agencies" Icon="@Icons.Material.Filled.AccountBalance">
+            Agencies
+        </MudNavLink>
+        <MudNavLink Href="/producers" Icon="@Icons.Material.Filled.Person">
+            Producers
+        </MudNavLink>
+    </MudNavGroup>
+
+    <MudNavGroup Title="Underwriting" Icon="@Icons.Material.Filled.Assignment" Expanded="true">
+        <MudNavLink Href="/submissions" Icon="@Icons.Material.Filled.Description">
+            Submissions
+        </MudNavLink>
+        <MudNavLink Href="/submissions/dashboard" Icon="@Icons.Material.Filled.Timeline">
+            Pipeline Dashboard
+        </MudNavLink>
+    </MudNavGroup>
+
+    <MudNavGroup Title="Compliance" Icon="@Icons.Material.Filled.VerifiedUser" Expanded="true">
+        <AuthorizeView Policy="@SecuraPolicies.CanViewCompliance">
+            <MudNavLink Href="/admin/compliance" Icon="@Icons.Material.Filled.Shield">
+                Compliance Dashboard
+            </MudNavLink>
+        </AuthorizeView>
+    </MudNavGroup>
+
+    <MudNavGroup Title="Claims" Icon="@Icons.Material.Filled.Gavel" Expanded="true">
+        <MudNavLink Href="/claims" Icon="@Icons.Material.Filled.ReportProblem">
+            Claims
+        </MudNavLink>
+    </MudNavGroup>
+
+    <MudNavGroup Title="Resources" Icon="@Icons.Material.Filled.Folder" Expanded="true">
+        <MudNavLink Href="/documents" Icon="@Icons.Material.Filled.InsertDriveFile">
+            Documents
+        </MudNavLink>
+    </MudNavGroup>
+
+    <MudNavGroup Title="Analytics" Icon="@Icons.Material.Filled.BarChart" Expanded="true">
+        <AuthorizeView Policy="@SecuraPolicies.CanViewReports">
+            <MudNavLink Href="/reports/agency-scorecard" Icon="@Icons.Material.Filled.Assessment">
+                Agency Scorecard
+            </MudNavLink>
+            <MudNavLink Href="/reports/pipeline" Icon="@Icons.Material.Filled.ShowChart">
+                Pipeline Report
+            </MudNavLink>
+            <MudNavLink Href="/reports/compliance" Icon="@Icons.Material.Filled.FactCheck">
+                Compliance Summary
+            </MudNavLink>
+        </AuthorizeView>
+    </MudNavGroup>
+
+    <MudNavGroup Title="Admin" Icon="@Icons.Material.Filled.Settings" Expanded="true">
+        <AuthorizeView Policy="@SecuraPolicies.CanAdminister">
+            <MudNavLink Href="/admin/checklist-templates" Icon="@Icons.Material.Filled.Checklist">
+                Checklist Templates
+            </MudNavLink>
+            <MudNavLink Href="/admin/appetite-tags" Icon="@Icons.Material.Filled.Label">
+                Appetite Tags
+            </MudNavLink>
+        </AuthorizeView>
+    </MudNavGroup>
+</MudNavMenu>

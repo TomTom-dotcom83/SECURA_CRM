@@ -1,0 +1,71 @@
+@inject IMediator Mediator
+@using Secura.DistributionCrm.Relationships.Application.Interactions
+@using Secura.DistributionCrm.Relationships.Application.Interactions
+@using MediatR
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_interactions.Count == 0)
+{
+    <MudAlert Severity="Severity.Info" Dense="true">No interactions recorded.</MudAlert>
+}
+else
+{
+    <MudTimeline>
+        @foreach (var item in _interactions)
+        {
+            <MudTimelineItem Color="@GetColor(item.InteractionType)" Size="Size.Small">
+                <ItemContent>
+                    <MudText Typo="Typo.subtitle2">
+                        <MudChip T="string" Size="Size.Small" Color="@GetColor(item.InteractionType)">
+                            @item.InteractionType
+                        </MudChip>
+                        @item.Summary
+                    </MudText>
+                    @if (!string.IsNullOrWhiteSpace(item.DetailNotes))
+                    {
+                        <MudText Typo="Typo.body2" Class="mt-1">@item.DetailNotes</MudText>
+                    }
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        @item.Timestamp.ToString("yyyy-MM-dd HH:mm") UTC
+                        · @(item.CreatedByDisplayName ?? item.CreatedByUserId)
+                    </MudText>
+                </ItemContent>
+            </MudTimelineItem>
+        }
+    </MudTimeline>
+}
+
+@code {
+    [Parameter, EditorRequired] public string EntityType { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public Guid EntityId { get; set; }
+    [Parameter] public int MaxResults { get; set; } = 50;
+
+    private IReadOnlyList<InteractionDto> _interactions = [];
+    private bool _loading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (EntityId == Guid.Empty) return;
+
+        _loading = true;
+        try
+        {
+            _interactions = await Mediator.Send(
+                new GetInteractionTimelineQuery(EntityType, EntityId, MaxResults));
+        }
+        finally { _loading = false; }
+    }
+
+    private static Color GetColor(Secura.DistributionCrm.SharedKernel.Enums.InteractionType type) => type switch
+    {
+        Secura.DistributionCrm.SharedKernel.Enums.InteractionType.Call => Color.Primary,
+        Secura.DistributionCrm.SharedKernel.Enums.InteractionType.Email => Color.Info,
+        Secura.DistributionCrm.SharedKernel.Enums.InteractionType.Meeting => Color.Success,
+        Secura.DistributionCrm.SharedKernel.Enums.InteractionType.Visit => Color.Secondary,
+        Secura.DistributionCrm.SharedKernel.Enums.InteractionType.Task => Color.Warning,
+        _ => Color.Default
+    };
+}

@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Secura.DistributionCrm.Host</AssemblyName>
+    <RootNamespace>Secura.DistributionCrm.Host</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Modules\Agencies\Agencies.Infrastructure\Agencies.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Relationships\Relationships.Infrastructure\Relationships.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Submissions\Submissions.Infrastructure\Submissions.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Claims\Claims.Infrastructure\Claims.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Documents\Documents.Infrastructure\Documents.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Reporting\Reporting.Infrastructure\Reporting.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Administration\Administration.Infrastructure\Administration.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Agencies\Agencies.Application\Agencies.Application.csproj" />
+    <ProjectReference Include="..\..\Modules\Relationships\Relationships.Application\Relationships.Application.csproj" />
+    <ProjectReference Include="..\..\Modules\Submissions\Submissions.Application\Submissions.Application.csproj" />
+    <ProjectReference Include="..\..\Modules\Claims\Claims.Application\Claims.Application.csproj" />
+    <ProjectReference Include="..\..\Modules\Documents\Documents.Application\Documents.Application.csproj" />
+    <ProjectReference Include="..\..\Modules\Reporting\Reporting.Application\Reporting.Application.csproj" />
+    <ProjectReference Include="..\..\Modules\Administration\Administration.Application\Administration.Application.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+  </ItemGroup>
+</Project>
